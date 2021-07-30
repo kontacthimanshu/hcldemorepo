@@ -1,0 +1,54 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: 'Restore Nuget Packages'
+  inputs:
+    command: 'restore'
+    projects: '**/*.sln' 
+    feedsToUse: config
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.sln'
+    arguments: '--configuration $(buildConfiguration)'
+  displayName: 'Build Application $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish The Zip Package'
+  inputs:
+    command: publish
+    publishWebProjects: True
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: True
+
+# this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Artifact To Azure Pipeline'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)' 
+    artifactName: 'hcldemoweb'
+- task: DownloadPipelineArtifact@2
+  inputs:
+    artifact: 'hcldemoweb'
+    patterns: '**/*.zip'
+    path: $(Build.SourcesDirectory)/bin    
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'hcldemoconnection'
+    appName: 'hcldemo'
+    appType: webApp
+    package: '$(Build.SourcesDirectory)/bin/*.zip'
