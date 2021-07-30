@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: hcldemoweb 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hcldemoweb
+  template:
+    metadata:
+      labels:
+        app: hcldemoweb 
+    spec:
+      containers:
+        - name: hcldemoweb 
+          image: hcldemoacr.azurecr.io/hcldemoweb
+          ports:
+          - containerPort: 80
